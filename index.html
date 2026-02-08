@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanban Todo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="logged-out">
+
+  <!-- Login -->
+  <div id="login-section" class="login-section">
+    <div class="login-card">
+      <h1>Kanban Board</h1>
+      <form id="login-form">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" required placeholder="email@esempio.com">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" required placeholder="Password">
+        <button type="submit" class="btn-primary">Accedi</button>
+        <p id="login-error" class="login-error hidden"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app-section" class="app-section">
+    <header>
+      <h1>Kanban Board</h1>
+      <div class="header-actions">
+        <button id="btn-add" title="Nuova task">+</button>
+        <button id="btn-logout" class="btn-logout" title="Logout">Logout</button>
+      </div>
+    </header>
+
+    <main class="board">
+      <div class="column" data-status="backlog">
+        <h2>Backlog</h2>
+        <div class="card-list" data-status="backlog"></div>
+      </div>
+      <div class="column" data-status="todo">
+        <h2>Todo</h2>
+        <div class="card-list" data-status="todo"></div>
+      </div>
+      <div class="column" data-status="inprogress">
+        <h2>In Progress</h2>
+        <div class="card-list" data-status="inprogress"></div>
+      </div>
+      <div class="column" data-status="done">
+        <h2>Done</h2>
+        <div class="card-list" data-status="done"></div>
+      </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal">
+        <h3 id="modal-title">Nuova Task</h3>
+        <form id="task-form">
+          <input type="hidden" id="form-id">
+          <label for="form-title">Titolo</label>
+          <input type="text" id="form-title" required>
+
+          <label for="form-status">Stato</label>
+          <select id="form-status">
+            <option value="backlog">Backlog</option>
+            <option value="todo">Todo</option>
+            <option value="inprogress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+
+          <label>Assegnatari</label>
+          <div id="form-assignees" class="checkbox-group"></div>
+
+          <label for="form-due">Scadenza</label>
+          <input type="date" id="form-due">
+
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary">Salva</button>
+            <button type="button" id="btn-cancel" class="btn-secondary">Annulla</button>
+            <button type="button" id="btn-delete" class="btn-danger hidden">Elimina</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
