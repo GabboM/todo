@@ -12,16 +12,70 @@ let allTasks = [];
 
 const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
+const setpwSection = document.getElementById("setpw-section");
+const setpwForm = document.getElementById("setpw-form");
+const setpwError = document.getElementById("setpw-error");
+
+let needsPassword = false;
 
 sb.auth.onAuthStateChange((event, session) => {
-  if (session) {
+  // Invite or password recovery: show "set password" form
+  if (event === "PASSWORD_RECOVERY") {
+    needsPassword = true;
+    document.body.classList.remove("logged-out", "logged-in");
+    document.getElementById("login-section").classList.add("hidden");
+    document.getElementById("app-section").classList.add("hidden");
+    setpwSection.classList.remove("hidden");
+    return;
+  }
+
+  if (session && !needsPassword) {
     document.body.classList.remove("logged-out");
     document.body.classList.add("logged-in");
+    setpwSection.classList.add("hidden");
     loadBoard();
-  } else {
+  } else if (!session) {
     document.body.classList.remove("logged-in");
     document.body.classList.add("logged-out");
+    setpwSection.classList.add("hidden");
   }
+});
+
+setpwForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  setpwError.classList.add("hidden");
+
+  const displayName = document.getElementById("setpw-name").value.trim();
+  const pw = document.getElementById("setpw-password").value;
+  const confirm = document.getElementById("setpw-confirm").value;
+
+  if (pw !== confirm) {
+    setpwError.textContent = "Le password non coincidono.";
+    setpwError.classList.remove("hidden");
+    return;
+  }
+
+  const { error } = await sb.auth.updateUser({ password: pw });
+
+  if (error) {
+    setpwError.textContent = error.message;
+    setpwError.classList.remove("hidden");
+    return;
+  }
+
+  // Update display name in profiles
+  const { data: { user } } = await sb.auth.getUser();
+  if (user) {
+    await sb.from("profiles")
+      .update({ username: displayName })
+      .eq("id", user.id);
+  }
+
+  needsPassword = false;
+  setpwSection.classList.add("hidden");
+  document.body.classList.remove("logged-out");
+  document.body.classList.add("logged-in");
+  loadBoard();
 });
 
 loginForm.addEventListener("submit", async (e) => {
@@ -85,21 +139,21 @@ filterAssignee.addEventListener("change", () => {
 // --- Fetch & Render ---
 
 async function loadBoard() {
-  const [tasksRes, assigneesRes] = await Promise.all([
+  const [tasksRes, profilesRes] = await Promise.all([
     sb.from("tasks").select("*"),
-    sb.from("assignees").select("name"),
+    sb.from("profiles").select("username"),
   ]);
 
   if (tasksRes.error) {
     console.error("Error loading tasks:", tasksRes.error);
     return;
   }
-  if (assigneesRes.error) {
-    console.error("Error loading assignees:", assigneesRes.error);
+  if (profilesRes.error) {
+    console.error("Error loading profiles:", profilesRes.error);
     return;
   }
 
-  allAssignees = assigneesRes.data.map((a) => a.name);
+  allAssignees = profilesRes.data.map((p) => p.username).filter(Boolean);
   allTasks = tasksRes.data || [];
 
   // Update filter dropdown (keep current selection)

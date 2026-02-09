@@ -75,6 +75,13 @@ body.logged-in .login-section {
   margin-top: 20px;
 }
 
+.setpw-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
 .login-error {
   color: #ef4444;
   font-size: 0.8rem;
