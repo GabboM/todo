@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kanban Todo</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="logged-out">
@@ -33,6 +36,13 @@
         <button id="btn-logout" class="btn-logout" title="Logout">Logout</button>
       </div>
     </header>
+
+    <div class="filter-bar">
+      <label for="filter-assignee">Filtra per:</label>
+      <select id="filter-assignee">
+        <option value="">Tutti</option>
+      </select>
+    </div>
 
     <main class="board">
       <div class="column" data-status="backlog">
@@ -70,8 +80,10 @@
             <option value="done">Done</option>
           </select>
 
-          <label>Assegnatari</label>
-          <div id="form-assignees" class="checkbox-group"></div>
+          <label for="form-assignee">Assegnatario</label>
+          <select id="form-assignee">
+            <option value="">-- Nessuno --</option>
+          </select>
 
           <label for="form-due">Scadenza</label>
           <input type="date" id="form-due">
@@ -86,6 +98,16 @@
     </div>
   </div>
 
+  <!-- Offline banner -->
+  <div id="offline-banner" class="offline-banner hidden">Sei offline</div>
+
   <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js");
+      });
+    }
+  </script>
 </body>
 </html>

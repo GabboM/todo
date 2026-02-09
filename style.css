@@ -138,6 +138,30 @@ header h1 {
   background: #f3f4f6;
 }
 
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.filter-bar label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.filter-bar select {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
 /* Board */
 .board {
   display: grid;
@@ -338,24 +362,6 @@ header h1 {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
-.checkbox-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #1a1a1a;
-  margin: 0;
-  cursor: pointer;
-}
-
 .modal-actions {
   display: flex;
   gap: 8px;
@@ -394,6 +400,31 @@ header h1 {
 
 .hidden {
   display: none !important;
+}
+
+/* Touch drag clone */
+.touch-clone {
+  position: fixed;
+  z-index: 150;
+  pointer-events: none;
+  opacity: 0.85;
+  transform: rotate(2deg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Offline banner */
+.offline-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #374151;
+  color: #fff;
+  text-align: center;
+  padding: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 200;
 }
 
 /* Responsive */

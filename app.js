@@ -6,11 +6,10 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_-vYudRVg3UUVYGEHV55_Pw_bJEfiW1c
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 let allAssignees = [];
+let allTasks = [];
 
 // --- Auth ---
 
-const loginSection = document.getElementById("login-section");
-const appSection = document.getElementById("app-section");
 const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
 
@@ -44,6 +43,14 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
   await sb.auth.signOut();
 });
 
+// --- Filter ---
+
+const filterAssignee = document.getElementById("filter-assignee");
+
+filterAssignee.addEventListener("change", () => {
+  renderTasks(allTasks);
+});
+
 // --- Fetch & Render ---
 
 async function loadBoard() {
@@ -62,7 +69,15 @@ async function loadBoard() {
   }
 
   allAssignees = assigneesRes.data.map((a) => a.name);
-  renderTasks(tasksRes.data || []);
+  allTasks = tasksRes.data || [];
+
+  // Update filter dropdown (keep current selection)
+  const currentFilter = filterAssignee.value;
+  filterAssignee.innerHTML = '<option value="">Tutti</option>' +
+    allAssignees.map((a) => `<option value="${esc(a)}">${esc(a)}</option>`).join("");
+  filterAssignee.value = currentFilter;
+
+  renderTasks(allTasks);
 }
 
 function renderTasks(tasks) {
@@ -70,7 +85,14 @@ function renderTasks(tasks) {
     list.innerHTML = "";
   });
 
+  const filter = filterAssignee.value;
+
   tasks.forEach((task) => {
+    // Get the single assignee (first element of the JSONB array, or empty)
+    const assignee = (task.assignees && task.assignees[0]) || "";
+
+    if (filter && assignee !== filter) return;
+
     const list = document.querySelector(
       `.card-list[data-status="${task.status}"]`
     );
@@ -98,9 +120,8 @@ function createCard(task) {
     inprogress: { status: "done", icon: "&#x2714;", cls: "advance-green" },
   };
 
-  const badges = (task.assignees || [])
-    .map((a) => `<span class="badge">${esc(a)}</span>`)
-    .join("");
+  const assignee = (task.assignees && task.assignees[0]) || "";
+  const badgeHtml = assignee ? `<span class="badge">${esc(assignee)}</span>` : "";
 
   let dueDateHtml = "";
   if (dueDate) {
@@ -116,7 +137,7 @@ function createCard(task) {
   card.innerHTML = `
     ${advanceHtml}
     <div class="card-title">${esc(task.title)}</div>
-    <div class="card-meta">${badges}${dueDateHtml}</div>
+    <div class="card-meta">${badgeHtml}${dueDateHtml}</div>
   `;
 
   // Advance button click
@@ -133,7 +154,7 @@ function createCard(task) {
     });
   }
 
-  // Drag events
+  // Desktop drag events
   card.addEventListener("dragstart", (e) => {
     card.classList.add("dragging");
     e.dataTransfer.setData("text/plain", task.id);
@@ -150,7 +171,7 @@ function createCard(task) {
   return card;
 }
 
-// --- Drag & Drop ---
+// --- Desktop Drag & Drop ---
 
 document.querySelectorAll(".card-list").forEach((list) => {
   list.addEventListener("dragover", (e) => {
@@ -179,6 +200,99 @@ document.querySelectorAll(".card-list").forEach((list) => {
   });
 });
 
+// --- Touch Drag & Drop (mobile) ---
+
+let touchDragCard = null;
+let touchDragId = null;
+let touchClone = null;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchMoved = false;
+
+document.addEventListener("touchstart", (e) => {
+  const card = e.target.closest(".card");
+  if (!card || e.target.closest(".btn-advance")) return;
+
+  touchDragCard = card;
+  touchDragId = card.dataset.id;
+  touchMoved = false;
+
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+}, { passive: true });
+
+document.addEventListener("touchmove", (e) => {
+  if (!touchDragCard) return;
+
+  const touch = e.touches[0];
+  const dx = touch.clientX - touchStartX;
+  const dy = touch.clientY - touchStartY;
+
+  // Only start drag after moving 10px (avoid triggering on taps)
+  if (!touchMoved && Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+
+  if (!touchMoved) {
+    touchMoved = true;
+    touchDragCard.classList.add("dragging");
+
+    // Create floating clone
+    touchClone = touchDragCard.cloneNode(true);
+    touchClone.classList.add("touch-clone");
+    const rect = touchDragCard.getBoundingClientRect();
+    touchClone.style.width = rect.width + "px";
+    document.body.appendChild(touchClone);
+  }
+
+  e.preventDefault();
+
+  touchClone.style.left = touch.clientX - touchClone.offsetWidth / 2 + "px";
+  touchClone.style.top = touch.clientY - touchClone.offsetHeight / 2 + "px";
+
+  // Highlight drop target
+  document.querySelectorAll(".card-list").forEach((l) => l.classList.remove("drag-over"));
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (el) {
+    const targetList = el.closest(".card-list");
+    if (targetList) targetList.classList.add("drag-over");
+  }
+}, { passive: false });
+
+document.addEventListener("touchend", async (e) => {
+  if (!touchDragCard) return;
+
+  if (touchMoved && touchClone) {
+    touchClone.remove();
+    touchClone = null;
+    touchDragCard.classList.remove("dragging");
+
+    const touch = e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetList = el ? el.closest(".card-list") : null;
+
+    document.querySelectorAll(".card-list").forEach((l) => l.classList.remove("drag-over"));
+
+    if (targetList && touchDragId) {
+      const newStatus = targetList.dataset.status;
+      const { error } = await sb
+        .from("tasks")
+        .update({ status: newStatus })
+        .eq("id", touchDragId);
+      if (error) console.error("Error updating task status:", error);
+      loadBoard();
+    }
+  } else if (!touchMoved) {
+    // It was a tap, not a drag — open modal
+    const taskId = touchDragCard.dataset.id;
+    const task = allTasks.find((t) => t.id === taskId);
+    if (task) openModal(task);
+  }
+
+  touchDragCard = null;
+  touchDragId = null;
+  touchMoved = false;
+});
+
 // --- Modal ---
 
 const overlay = document.getElementById("modal-overlay");
@@ -187,7 +301,7 @@ const formId = document.getElementById("form-id");
 const formTitle = document.getElementById("form-title");
 const formStatus = document.getElementById("form-status");
 const formDue = document.getElementById("form-due");
-const formAssignees = document.getElementById("form-assignees");
+const formAssignee = document.getElementById("form-assignee");
 const modalTitle = document.getElementById("modal-title");
 const btnDelete = document.getElementById("btn-delete");
 
@@ -201,18 +315,9 @@ function openModal(task = null) {
   form.reset();
   formId.value = "";
 
-  // Build assignee checkboxes
-  formAssignees.innerHTML = allAssignees
-    .map(
-      (a) => `
-    <label>
-      <input type="checkbox" value="${esc(a)}" ${
-        task && task.assignees.includes(a) ? "checked" : ""
-      }>
-      ${esc(a)}
-    </label>`
-    )
-    .join("");
+  // Build assignee dropdown
+  formAssignee.innerHTML = '<option value="">-- Nessuno --</option>' +
+    allAssignees.map((a) => `<option value="${esc(a)}">${esc(a)}</option>`).join("");
 
   if (task) {
     modalTitle.textContent = "Modifica Task";
@@ -220,6 +325,8 @@ function openModal(task = null) {
     formTitle.value = task.title;
     formStatus.value = task.status;
     formDue.value = task.due_date || "";
+    const assignee = (task.assignees && task.assignees[0]) || "";
+    formAssignee.value = assignee;
     btnDelete.classList.remove("hidden");
   } else {
     modalTitle.textContent = "Nuova Task";
@@ -236,14 +343,12 @@ function closeModal() {
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const selectedAssignees = [
-    ...formAssignees.querySelectorAll("input:checked"),
-  ].map((cb) => cb.value);
+  const assignee = formAssignee.value;
 
   const payload = {
     title: formTitle.value.trim(),
     status: formStatus.value,
-    assignees: selectedAssignees,
+    assignees: assignee ? [assignee] : [],
     due_date: formDue.value,
   };
 
@@ -283,3 +388,22 @@ function esc(str) {
   d.textContent = str;
   return d.innerHTML;
 }
+
+// --- Offline detection ---
+
+const offlineBanner = document.getElementById("offline-banner");
+
+function updateOnlineStatus() {
+  if (navigator.onLine) {
+    offlineBanner.classList.add("hidden");
+  } else {
+    offlineBanner.classList.remove("hidden");
+  }
+}
+
+window.addEventListener("online", () => {
+  updateOnlineStatus();
+  loadBoard();
+});
+window.addEventListener("offline", updateOnlineStatus);
+updateOnlineStatus();
