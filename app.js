@@ -190,13 +190,25 @@ document.querySelectorAll(".card-list").forEach((list) => {
     const taskId = e.dataTransfer.getData("text/plain");
     const newStatus = list.dataset.status;
 
+    // Optimistic: update local state and re-render card in new column
+    const task = allTasks.find((t) => t.id === taskId);
+    if (task) {
+      task.status = newStatus;
+      const oldCard = document.querySelector(`.card[data-id="${taskId}"]`);
+      if (oldCard) oldCard.remove();
+      list.appendChild(createCard(task));
+    }
+
+    // Sync with server
     const { error } = await sb
       .from("tasks")
       .update({ status: newStatus })
       .eq("id", taskId);
 
-    if (error) console.error("Error updating task status:", error);
-    loadBoard();
+    if (error) {
+      console.error("Error updating task status:", error);
+      loadBoard();
+    }
   });
 });
 
