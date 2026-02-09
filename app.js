@@ -43,6 +43,37 @@ document.getElementById("btn-logout").addEventListener("click", async () => {
   await sb.auth.signOut();
 });
 
+// --- View toggle (Board / Archive) ---
+
+let currentView = "board"; // "board" or "archive"
+const boardEl = document.querySelector(".board");
+const filterBar = document.querySelector(".filter-bar");
+const archiveSection = document.getElementById("archive-section");
+const archiveList = document.getElementById("archive-list");
+const archiveEmpty = document.getElementById("archive-empty");
+const btnArchiveView = document.getElementById("btn-archive-view");
+const btnAdd = document.getElementById("btn-add");
+
+btnArchiveView.addEventListener("click", () => {
+  if (currentView === "board") {
+    currentView = "archive";
+    btnArchiveView.textContent = "Board";
+    boardEl.classList.add("hidden");
+    filterBar.classList.add("hidden");
+    btnAdd.classList.add("hidden");
+    archiveSection.classList.remove("hidden");
+    renderArchive();
+  } else {
+    currentView = "board";
+    btnArchiveView.textContent = "Archivio";
+    archiveSection.classList.add("hidden");
+    boardEl.classList.remove("hidden");
+    filterBar.classList.remove("hidden");
+    btnAdd.classList.remove("hidden");
+    renderTasks(allTasks);
+  }
+});
+
 // --- Filter ---
 
 const filterAssignee = document.getElementById("filter-assignee");
@@ -88,9 +119,9 @@ function renderTasks(tasks) {
   const filter = filterAssignee.value;
 
   tasks.forEach((task) => {
-    // Get the single assignee (first element of the JSONB array, or empty)
-    const assignee = (task.assignees && task.assignees[0]) || "";
+    if (task.status === "archived") return;
 
+    const assignee = (task.assignees && task.assignees[0]) || "";
     if (filter && assignee !== filter) return;
 
     const list = document.querySelector(
@@ -99,6 +130,45 @@ function renderTasks(tasks) {
     if (!list) return;
     list.appendChild(createCard(task));
   });
+}
+
+function renderArchive() {
+  archiveList.innerHTML = "";
+  const archived = allTasks.filter((t) => t.status === "archived");
+
+  if (archived.length === 0) {
+    archiveEmpty.classList.remove("hidden");
+  } else {
+    archiveEmpty.classList.add("hidden");
+    archived.forEach((task) => {
+      const row = document.createElement("div");
+      row.className = "archive-row";
+
+      const assignee = (task.assignees && task.assignees[0]) || "";
+      const badgeHtml = assignee ? `<span class="badge">${esc(assignee)}</span>` : "";
+      const dueHtml = task.due_date ? `<span class="due-date">${task.due_date}</span>` : "";
+
+      row.innerHTML = `
+        <div class="archive-info">
+          <span class="archive-title">${esc(task.title)}</span>
+          <div class="card-meta">${badgeHtml}${dueHtml}</div>
+        </div>
+        <button class="btn-restore" title="Ripristina">Ripristina</button>
+      `;
+
+      row.querySelector(".btn-restore").addEventListener("click", async () => {
+        const { error } = await sb
+          .from("tasks")
+          .update({ status: "backlog" })
+          .eq("id", task.id);
+        if (error) console.error("Error restoring task:", error);
+        await loadBoard();
+        renderArchive();
+      });
+
+      archiveList.appendChild(row);
+    });
+  }
 }
 
 function createCard(task) {
@@ -223,6 +293,7 @@ const formDue = document.getElementById("form-due");
 const formAssignee = document.getElementById("form-assignee");
 const modalTitle = document.getElementById("modal-title");
 const btnDelete = document.getElementById("btn-delete");
+const btnArchive = document.getElementById("btn-archive");
 
 document.getElementById("btn-add").addEventListener("click", () => openModal());
 document.getElementById("btn-cancel").addEventListener("click", closeModal);
@@ -247,9 +318,11 @@ function openModal(task = null) {
     const assignee = (task.assignees && task.assignees[0]) || "";
     formAssignee.value = assignee;
     btnDelete.classList.remove("hidden");
+    btnArchive.classList.remove("hidden");
   } else {
     modalTitle.textContent = "Nuova Task";
     btnDelete.classList.add("hidden");
+    btnArchive.classList.add("hidden");
   }
 
   overlay.classList.remove("hidden");
@@ -296,6 +369,19 @@ btnDelete.addEventListener("click", async () => {
     .eq("id", formId.value);
 
   if (error) console.error("Error deleting task:", error);
+  closeModal();
+  loadBoard();
+});
+
+btnArchive.addEventListener("click", async () => {
+  if (!formId.value) return;
+
+  const { error } = await sb
+    .from("tasks")
+    .update({ status: "archived" })
+    .eq("id", formId.value);
+
+  if (error) console.error("Error archiving task:", error);
   closeModal();
   loadBoard();
 });

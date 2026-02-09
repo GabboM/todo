@@ -402,6 +402,90 @@ header h1 {
   display: none !important;
 }
 
+/* Archive toggle button */
+.btn-archive-toggle {
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-archive-toggle:hover {
+  background: #f3f4f6;
+}
+
+/* Archive button in modal */
+.btn-archive {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #6b7280;
+  color: #fff;
+}
+.btn-archive:hover { background: #4b5563; }
+
+/* Archive view */
+.archive-section {
+  padding: 24px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.archive-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.archive-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.archive-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.btn-restore {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-restore:hover { background: #f3f4f6; }
+
+.archive-empty {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  padding: 40px 0;
+}
+
 /* Offline banner */
 .offline-banner {
   position: fixed;

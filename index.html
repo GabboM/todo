@@ -32,6 +32,7 @@
     <header>
       <h1>Kanban Board</h1>
       <div class="header-actions">
+        <button id="btn-archive-view" class="btn-archive-toggle" title="Archivio">Archivio</button>
         <button id="btn-add" title="Nuova task">+</button>
         <button id="btn-logout" class="btn-logout" title="Logout">Logout</button>
       </div>
@@ -63,6 +64,12 @@
       </div>
     </main>
 
+    <!-- Archive view -->
+    <section id="archive-section" class="archive-section hidden">
+      <div id="archive-list" class="archive-list"></div>
+      <p id="archive-empty" class="archive-empty hidden">Nessuna task archiviata.</p>
+    </section>
+
     <!-- Modal -->
     <div id="modal-overlay" class="modal-overlay hidden">
       <div class="modal">
@@ -91,6 +98,7 @@
           <div class="modal-actions">
             <button type="submit" class="btn-primary">Salva</button>
             <button type="button" id="btn-cancel" class="btn-secondary">Annulla</button>
+            <button type="button" id="btn-archive" class="btn-archive hidden">Archivia</button>
             <button type="button" id="btn-delete" class="btn-danger hidden">Elimina</button>
           </div>
         </form>
