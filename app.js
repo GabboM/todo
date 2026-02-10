@@ -294,14 +294,18 @@ function createCard(task) {
     ? `<button class="btn-advance ${next.cls}" data-next="${next.status}">${next.icon}</button>`
     : "";
 
+  const archiveBtnHtml = task.status === "done"
+    ? `<button class="btn-advance advance-archive" title="Archivia">&#x1F4E6;</button>`
+    : "";
+
   card.innerHTML = `
-    ${advanceHtml}
+    ${advanceHtml}${archiveBtnHtml}
     <div class="card-title">${esc(task.title)}</div>
     <div class="card-meta">${badgeHtml}${dueDateHtml}</div>
   `;
 
   // Advance button click
-  const advanceBtn = card.querySelector(".btn-advance");
+  const advanceBtn = card.querySelector(".btn-advance:not(.advance-archive)");
   if (advanceBtn) {
     advanceBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -310,6 +314,20 @@ function createCard(task) {
         .update({ status: advanceBtn.dataset.next })
         .eq("id", task.id);
       if (error) console.error("Error advancing task:", error);
+      loadBoard();
+    });
+  }
+
+  // Archive button click (done column only)
+  const archiveBtn = card.querySelector(".advance-archive");
+  if (archiveBtn) {
+    archiveBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const { error } = await sb
+        .from("tasks")
+        .update({ status: "archived" })
+        .eq("id", task.id);
+      if (error) console.error("Error archiving task:", error);
       loadBoard();
     });
   }

@@ -278,6 +278,7 @@ header h1 {
 .advance-blue { background: #3b82f6; color: #fff; }
 .advance-yellow { background: #f59e0b; color: #fff; }
 .advance-green { background: #10b981; color: #fff; }
+.advance-archive { background: #9ca3af; color: #fff; font-size: 12px; }
 
 .card-title {
   font-size: 0.95rem;
