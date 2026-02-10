@@ -16,41 +16,41 @@ const setpwSection = document.getElementById("setpw-section");
 const setpwForm = document.getElementById("setpw-form");
 const setpwError = document.getElementById("setpw-error");
 
-let needsPassword = false;
-
-// Detect invite flow from URL hash (Supabase redirects with #...&type=invite)
-const hashParams = new URLSearchParams(window.location.hash.substring(1));
-const authType = hashParams.get("type");
-if (authType === "invite" || authType === "recovery") {
-  needsPassword = true;
-}
-
 function showSetPasswordForm() {
-  needsPassword = true;
   document.body.classList.remove("logged-out", "logged-in");
   document.getElementById("login-section").classList.add("hidden");
   document.getElementById("app-section").classList.add("hidden");
   setpwSection.classList.remove("hidden");
 }
 
-sb.auth.onAuthStateChange((event, session) => {
+function showApp() {
+  document.body.classList.remove("logged-out");
+  document.body.classList.add("logged-in");
+  setpwSection.classList.add("hidden");
+  loadBoard();
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
   // Password recovery link
   if (event === "PASSWORD_RECOVERY") {
     showSetPasswordForm();
     return;
   }
 
-  // Invite link: user gets a session but hasn't set a password yet
-  if (session && needsPassword) {
-    showSetPasswordForm();
-    return;
-  }
-
   if (session) {
-    document.body.classList.remove("logged-out");
-    document.body.classList.add("logged-in");
-    setpwSection.classList.add("hidden");
-    loadBoard();
+    // Check if user has set up their profile (username)
+    // If not, they're a new invite and need to set password + name
+    const { data: profile } = await sb
+      .from("profiles")
+      .select("username")
+      .eq("id", session.user.id)
+      .single();
+
+    if (!profile || !profile.username) {
+      showSetPasswordForm();
+    } else {
+      showApp();
+    }
   } else {
     document.body.classList.remove("logged-in");
     document.body.classList.add("logged-out");
