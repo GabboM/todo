@@ -30,27 +30,40 @@ function showApp() {
   loadBoard();
 }
 
-sb.auth.onAuthStateChange(async (event, session) => {
-  // Password recovery link
-  if (event === "PASSWORD_RECOVERY") {
-    showSetPasswordForm();
-    return;
-  }
-
-  if (session) {
-    // Check if user has set up their profile (username)
-    // If not, they're a new invite and need to set password + name
-    const { data: profile } = await sb
+async function handleAuthSession(session) {
+  try {
+    const { data: profile, error } = await sb
       .from("profiles")
       .select("username")
       .eq("id", session.user.id)
       .single();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      // Profile check failed, but user IS authenticated — show app anyway
+      showApp();
+      return;
+    }
 
     if (!profile || !profile.username) {
       showSetPasswordForm();
     } else {
       showApp();
     }
+  } catch (err) {
+    console.error("Unexpected error in auth flow:", err);
+    showApp();
+  }
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    showSetPasswordForm();
+    return;
+  }
+
+  if (session) {
+    handleAuthSession(session);
   } else {
     document.body.classList.remove("logged-in");
     document.body.classList.add("logged-out");
@@ -80,15 +93,21 @@ setpwForm.addEventListener("submit", async (e) => {
     return;
   }
 
-  // Update display name in profiles
+  // Update username in profiles
   const { data: { user } } = await sb.auth.getUser();
   if (user) {
-    await sb.from("profiles")
+    const { error: profileError } = await sb.from("profiles")
       .update({ username: displayName })
       .eq("id", user.id);
+
+    if (profileError) {
+      console.error("Error updating profile:", profileError);
+      setpwError.textContent = "Errore nel salvataggio del profilo. Riprova.";
+      setpwError.classList.remove("hidden");
+      return;
+    }
   }
 
-  needsPassword = false;
   setpwSection.classList.add("hidden");
   document.body.classList.remove("logged-out");
   document.body.classList.add("logged-in");
