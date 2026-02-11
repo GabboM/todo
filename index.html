@@ -21,25 +21,29 @@
         <input type="email" id="login-email" required placeholder="email@esempio.com">
         <label for="login-password">Password</label>
         <input type="password" id="login-password" required placeholder="Password">
-        <button type="submit" class="btn-primary">Accedi</button>
+        <div id="change-pw-fields" class="hidden">
+          <label for="login-new-pw">Nuova password</label>
+          <input type="password" id="login-new-pw" minlength="6" placeholder="Almeno 6 caratteri">
+          <label for="login-confirm-pw">Conferma nuova password</label>
+          <input type="password" id="login-confirm-pw" minlength="6" placeholder="Ripeti la password">
+        </div>
+        <button type="submit" id="login-submit-btn" class="btn-primary">Accedi</button>
         <p id="login-error" class="login-error hidden"></p>
       </form>
+      <button type="button" id="btn-toggle-changepw" class="btn-link">Cambia password</button>
     </div>
   </div>
 
-  <!-- Set password (invite flow) -->
+  <!-- Set display name (new user flow) -->
   <div id="setpw-section" class="login-section hidden">
     <div class="login-card">
       <h1>Benvenuto!</h1>
-      <p class="setpw-subtitle">Imposta la tua password per accedere.</p>
+      <p class="setpw-subtitle">Scegli il tuo nome per la board.</p>
       <form id="setpw-form">
         <label for="setpw-name">Nome</label>
         <input type="text" id="setpw-name" required placeholder="Come vuoi apparire nella board">
-        <label for="setpw-password">Password</label>
-        <input type="password" id="setpw-password" required minlength="6" placeholder="Almeno 6 caratteri">
-        <label for="setpw-confirm">Conferma password</label>
-        <input type="password" id="setpw-confirm" required minlength="6" placeholder="Ripeti la password">
-        <button type="submit" class="btn-primary">Imposta password</button>
+        <button type="submit" class="btn-primary">Salva</button>
+        <button type="button" id="btn-setpw-logout" class="btn-secondary" style="width:100%;margin-top:8px;">Logout</button>
         <p id="setpw-error" class="login-error hidden"></p>
       </form>
     </div>

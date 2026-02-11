@@ -56,11 +56,10 @@ async function handleAuthSession(session) {
   }
 }
 
+let suppressAuthNav = false;
+
 sb.auth.onAuthStateChange((event, session) => {
-  if (event === "PASSWORD_RECOVERY") {
-    showSetPasswordForm();
-    return;
-  }
+  if (suppressAuthNav) return;
 
   if (session) {
     handleAuthSession(session);
@@ -76,24 +75,7 @@ setpwForm.addEventListener("submit", async (e) => {
   setpwError.classList.add("hidden");
 
   const displayName = document.getElementById("setpw-name").value.trim();
-  const pw = document.getElementById("setpw-password").value;
-  const confirm = document.getElementById("setpw-confirm").value;
 
-  if (pw !== confirm) {
-    setpwError.textContent = "Le password non coincidono.";
-    setpwError.classList.remove("hidden");
-    return;
-  }
-
-  const { error } = await sb.auth.updateUser({ password: pw });
-
-  if (error) {
-    setpwError.textContent = error.message;
-    setpwError.classList.remove("hidden");
-    return;
-  }
-
-  // Update username in profiles
   const { data: { user } } = await sb.auth.getUser();
   if (user) {
     const { error: profileError } = await sb.from("profiles")
@@ -114,15 +96,95 @@ setpwForm.addEventListener("submit", async (e) => {
   loadBoard();
 });
 
+document.getElementById("btn-setpw-logout").addEventListener("click", async () => {
+  await sb.auth.signOut();
+});
+
+// --- Change password toggle on login page ---
+
+let changePwMode = false;
+const changePwFields = document.getElementById("change-pw-fields");
+const loginSubmitBtn = document.getElementById("login-submit-btn");
+
+document.getElementById("btn-toggle-changepw").addEventListener("click", () => {
+  changePwMode = !changePwMode;
+  loginError.classList.add("hidden");
+  loginError.style.color = "";
+
+  if (changePwMode) {
+    changePwFields.classList.remove("hidden");
+    loginSubmitBtn.textContent = "Cambia password";
+    document.getElementById("btn-toggle-changepw").textContent = "Torna al login";
+    document.getElementById("login-new-pw").required = true;
+    document.getElementById("login-confirm-pw").required = true;
+  } else {
+    changePwFields.classList.add("hidden");
+    loginSubmitBtn.textContent = "Accedi";
+    document.getElementById("btn-toggle-changepw").textContent = "Cambia password";
+    document.getElementById("login-new-pw").required = false;
+    document.getElementById("login-confirm-pw").required = false;
+  }
+});
+
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   loginError.classList.add("hidden");
+  loginError.style.color = "";
 
   const email = document.getElementById("login-email").value.trim();
   const password = document.getElementById("login-password").value;
 
-  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (changePwMode) {
+    const newPw = document.getElementById("login-new-pw").value;
+    const confirmPw = document.getElementById("login-confirm-pw").value;
 
+    if (newPw !== confirmPw) {
+      loginError.textContent = "Le nuove password non coincidono.";
+      loginError.classList.remove("hidden");
+      return;
+    }
+
+    suppressAuthNav = true;
+    try {
+      const { error: signInError } = await sb.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        loginError.textContent = signInError.message;
+        loginError.classList.remove("hidden");
+        return;
+      }
+
+      const { error: updateError } = await sb.auth.updateUser({ password: newPw });
+      if (updateError) {
+        loginError.textContent = updateError.message;
+        loginError.classList.remove("hidden");
+        return;
+      }
+
+      await sb.auth.signOut();
+    } finally {
+      suppressAuthNav = false;
+    }
+
+    // Ensure logged-out UI state
+    document.body.classList.remove("logged-in");
+    document.body.classList.add("logged-out");
+    setpwSection.classList.add("hidden");
+
+    // Reset to login mode
+    changePwMode = false;
+    changePwFields.classList.add("hidden");
+    loginSubmitBtn.textContent = "Accedi";
+    document.getElementById("btn-toggle-changepw").textContent = "Cambia password";
+    document.getElementById("login-new-pw").required = false;
+    document.getElementById("login-confirm-pw").required = false;
+
+    loginError.textContent = "Password cambiata! Accedi con la nuova password.";
+    loginError.style.color = "#10b981";
+    loginError.classList.remove("hidden");
+    return;
+  }
+
+  const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) {
     loginError.textContent = error.message;
     loginError.classList.remove("hidden");

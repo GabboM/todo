@@ -89,6 +89,19 @@ body.logged-in .login-section {
   text-align: center;
 }
 
+.btn-link {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 12px;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.btn-link:hover { text-decoration: underline; }
+
 /* Header */
 header {
   display: flex;
