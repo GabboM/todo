@@ -176,8 +176,8 @@ filterAssignee.addEventListener("change", () => {
 
 async function loadBoard() {
   const [tasksRes, profilesRes] = await Promise.all([
-    sb.from("tasks").select("*"),
-    sb.from("profiles").select("username"),
+    sb.from("tasks").select("*, assignee:profiles(id, username)"),
+    sb.from("profiles").select("id, username"),
   ]);
 
   if (tasksRes.error) {
@@ -189,13 +189,13 @@ async function loadBoard() {
     return;
   }
 
-  allAssignees = profilesRes.data.map((p) => p.username).filter(Boolean);
+  allAssignees = profilesRes.data.filter((p) => p.username);
   allTasks = tasksRes.data || [];
 
   // Update filter dropdown (keep current selection)
   const currentFilter = filterAssignee.value;
   filterAssignee.innerHTML = '<option value="">Tutti</option>' +
-    allAssignees.map((a) => `<option value="${esc(a)}">${esc(a)}</option>`).join("");
+    allAssignees.map((a) => `<option value="${a.id}">${esc(a.username)}</option>`).join("");
   filterAssignee.value = currentFilter;
 
   renderTasks(allTasks);
@@ -211,8 +211,7 @@ function renderTasks(tasks) {
   tasks.forEach((task) => {
     if (task.status === "archived") return;
 
-    const assignee = (task.assignees && task.assignees[0]) || "";
-    if (filter && assignee !== filter) return;
+    if (filter && task.assignee_id !== filter) return;
 
     const list = document.querySelector(
       `.card-list[data-status="${task.status}"]`
@@ -234,8 +233,8 @@ function renderArchive() {
       const row = document.createElement("div");
       row.className = "archive-row";
 
-      const assignee = (task.assignees && task.assignees[0]) || "";
-      const badgeHtml = assignee ? `<span class="badge">${esc(assignee)}</span>` : "";
+      const assigneeName = task.assignee ? task.assignee.username : "";
+      const badgeHtml = assigneeName ? `<span class="badge">${esc(assigneeName)}</span>` : "";
       const dueHtml = task.due_date ? `<span class="due-date">${task.due_date}</span>` : "";
 
       row.innerHTML = `
@@ -280,8 +279,8 @@ function createCard(task) {
     inprogress: { status: "done", icon: "&#x2714;", cls: "advance-green" },
   };
 
-  const assignee = (task.assignees && task.assignees[0]) || "";
-  const badgeHtml = assignee ? `<span class="badge">${esc(assignee)}</span>` : "";
+  const assigneeName = task.assignee ? task.assignee.username : "";
+  const badgeHtml = assigneeName ? `<span class="badge">${esc(assigneeName)}</span>` : "";
 
   let dueDateHtml = "";
   if (dueDate) {
@@ -415,7 +414,7 @@ function openModal(task = null) {
 
   // Build assignee dropdown
   formAssignee.innerHTML = '<option value="">-- Nessuno --</option>' +
-    allAssignees.map((a) => `<option value="${esc(a)}">${esc(a)}</option>`).join("");
+    allAssignees.map((a) => `<option value="${a.id}">${esc(a.username)}</option>`).join("");
 
   if (task) {
     modalTitle.textContent = "Modifica Task";
@@ -423,8 +422,7 @@ function openModal(task = null) {
     formTitle.value = task.title;
     formStatus.value = task.status;
     formDue.value = task.due_date || "";
-    const assignee = (task.assignees && task.assignees[0]) || "";
-    formAssignee.value = assignee;
+    formAssignee.value = task.assignee_id || "";
     btnDelete.classList.remove("hidden");
     btnArchive.classList.remove("hidden");
   } else {
@@ -443,12 +441,10 @@ function closeModal() {
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const assignee = formAssignee.value;
-
   const payload = {
     title: formTitle.value.trim(),
     status: formStatus.value,
-    assignees: assignee ? [assignee] : [],
+    assignee_id: formAssignee.value || null,
     due_date: formDue.value,
   };
 
