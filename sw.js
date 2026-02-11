@@ -1,4 +1,4 @@
-const CACHE_NAME = "kanban-v1";
+const CACHE_NAME = "kanban-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -27,22 +27,17 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
-// Fetch: cache-first for static assets, network-only for Supabase
+// Fetch: network-first for pages/scripts, cache-fallback for offline
 self.addEventListener("fetch", (e) => {
   if (e.request.url.includes("supabase.co")) return;
 
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      // Return cache immediately, but also fetch fresh copy in background
-      const fetchPromise = fetch(e.request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
-
-      return cached || fetchPromise;
-    })
+    fetch(e.request).then((response) => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+      }
+      return response;
+    }).catch(() => caches.match(e.request))
   );
 });
