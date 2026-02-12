@@ -7,6 +7,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 let allAssignees = [];
 let allTasks = [];
+let currentUserId = null;
 
 // --- Auth ---
 
@@ -31,6 +32,7 @@ function showApp() {
 }
 
 async function handleAuthSession(session) {
+  currentUserId = session.user.id;
   try {
     const { data: profile, error } = await sb
       .from("profiles")
@@ -64,6 +66,7 @@ sb.auth.onAuthStateChange((event, session) => {
   if (session) {
     handleAuthSession(session);
   } else {
+    currentUserId = null;
     document.body.classList.remove("logged-in");
     document.body.classList.add("logged-out");
     setpwSection.classList.add("hidden");
@@ -273,6 +276,8 @@ function renderTasks(tasks) {
   tasks.forEach((task) => {
     if (task.status === "archived") return;
 
+    if (Array.isArray(task.visible_to) && task.visible_to.length > 0 && !task.visible_to.includes(currentUserId)) return;
+
     if (filter && task.assignee_id !== filter) return;
 
     const list = document.querySelector(
@@ -285,7 +290,11 @@ function renderTasks(tasks) {
 
 function renderArchive() {
   archiveList.innerHTML = "";
-  const archived = allTasks.filter((t) => t.status === "archived");
+  const archived = allTasks.filter((t) => {
+    if (t.status !== "archived") return false;
+    if (Array.isArray(t.visible_to) && t.visible_to.length > 0 && !t.visible_to.includes(currentUserId)) return false;
+    return true;
+  });
 
   if (archived.length === 0) {
     archiveEmpty.classList.remove("hidden");
@@ -490,6 +499,12 @@ function openModal(task = null) {
   formAssignee.innerHTML = '<option value="">-- Nessuno --</option>' +
     allAssignees.map((a) => `<option value="${a.id}">${esc(a.username)}</option>`).join("");
 
+  // Build "Visibile a" checkboxes
+  const visibleToContainer = document.getElementById("form-visible-to");
+  visibleToContainer.innerHTML = allAssignees.map((a) =>
+    `<label><input type="checkbox" value="${a.id}"> ${esc(a.username)}</label>`
+  ).join("");
+
   if (task) {
     modalTitle.textContent = "Modifica task";
     formId.value = task.id;
@@ -499,6 +514,13 @@ function openModal(task = null) {
     formAssignee.value = task.assignee_id || "";
     btnDelete.classList.remove("hidden");
     btnArchive.classList.remove("hidden");
+
+    // Pre-select visible_to checkboxes
+    if (Array.isArray(task.visible_to) && task.visible_to.length > 0) {
+      visibleToContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+        if (task.visible_to.includes(cb.value)) cb.checked = true;
+      });
+    }
   } else {
     modalTitle.textContent = "Nuova task";
     btnDelete.classList.add("hidden");
@@ -515,11 +537,16 @@ function closeModal() {
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  const selectedVisible = Array.from(
+    document.querySelectorAll('#form-visible-to input[type="checkbox"]:checked')
+  ).map((cb) => cb.value);
+
   const payload = {
     title: formTitle.value.trim(),
     status: formStatus.value,
     assignee_id: formAssignee.value || null,
     due_date: formDue.value,
+    visible_to: selectedVisible.length > 0 ? selectedVisible : null,
   };
 
   if (formId.value) {
