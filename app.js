@@ -297,7 +297,13 @@ function renderArchive() {
 
       const assigneeName = task.assignee ? task.assignee.username : "";
       const badgeHtml = assigneeName ? `<span class="badge">${esc(assigneeName)}</span>` : "";
-      const dueHtml = task.due_date ? `<span class="due-date">${task.due_date}</span>` : "";
+      let dueDisplay = task.due_date || "";
+      if (dueDisplay && dueDisplay.includes("T")) {
+        const d = new Date(dueDisplay);
+        dueDisplay = d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })
+          + " " + d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+      }
+      const dueHtml = dueDisplay ? `<span class="due-date">${dueDisplay}</span>` : "";
 
       row.innerHTML = `
         <div class="archive-info">
@@ -330,7 +336,7 @@ function createCard(task) {
 
   const dueDate = task.due_date || "";
   const isOverdue =
-    dueDate && new Date(dueDate) < new Date().setHours(0, 0, 0, 0) &&
+    dueDate && new Date(dueDate) < new Date() &&
     task.status !== "done";
 
   if (isOverdue) card.classList.add("overdue");
@@ -347,7 +353,13 @@ function createCard(task) {
   let dueDateHtml = "";
   if (dueDate) {
     const cls = isOverdue ? "due-date overdue" : "due-date";
-    dueDateHtml = `<span class="${cls}">${dueDate}</span>`;
+    let displayDate = dueDate;
+    if (dueDate.includes("T")) {
+      const d = new Date(dueDate);
+      displayDate = d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" })
+        + " " + d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    }
+    dueDateHtml = `<span class="${cls}">${displayDate}</span>`;
   }
 
   const next = nextMap[task.status];

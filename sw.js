@@ -1,4 +1,4 @@
-const CACHE_NAME = "kanban-v2";
+const CACHE_NAME = "kanban-v3";
 const ASSETS = [
   "./",
   "./index.html",
