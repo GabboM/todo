@@ -209,7 +209,7 @@ const btnAdd = document.getElementById("btn-add");
 btnArchiveView.addEventListener("click", () => {
   if (currentView === "board") {
     currentView = "archive";
-    btnArchiveView.textContent = "Board";
+    btnArchiveView.textContent = "Bacheca";
     boardEl.classList.add("hidden");
     filterBar.classList.add("hidden");
     btnAdd.classList.add("hidden");
@@ -491,7 +491,7 @@ function openModal(task = null) {
     allAssignees.map((a) => `<option value="${a.id}">${esc(a.username)}</option>`).join("");
 
   if (task) {
-    modalTitle.textContent = "Modifica Task";
+    modalTitle.textContent = "Modifica task";
     formId.value = task.id;
     formTitle.value = task.title;
     formStatus.value = task.status;
@@ -500,7 +500,7 @@ function openModal(task = null) {
     btnDelete.classList.remove("hidden");
     btnArchive.classList.remove("hidden");
   } else {
-    modalTitle.textContent = "Nuova Task";
+    modalTitle.textContent = "Nuova task";
     btnDelete.classList.add("hidden");
     btnArchive.classList.add("hidden");
   }
@@ -539,7 +539,7 @@ form.addEventListener("submit", async (e) => {
 
 btnDelete.addEventListener("click", async () => {
   if (!formId.value) return;
-  if (!confirm("Eliminare questa task?")) return;
+  if (!confirm("Eliminare questa attività?")) return;
 
   const { error } = await sb
     .from("tasks")

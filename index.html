@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kanban Todo</title>
+  <title>Kanban</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
@@ -15,7 +15,7 @@
   <!-- Login -->
   <div id="login-section" class="login-section">
     <div class="login-card">
-      <h1>Kanban Board</h1>
+      <h1>Kanban</h1>
       <form id="login-form">
         <label for="login-email">Email</label>
         <input type="email" id="login-email" required placeholder="email@esempio.com">
@@ -43,7 +43,7 @@
         <label for="setpw-name">Nome</label>
         <input type="text" id="setpw-name" required placeholder="e.g. Roberto">
         <button type="submit" class="btn-primary">Salva</button>
-        <button type="button" id="btn-setpw-logout" class="btn-secondary" style="width:100%;margin-top:8px;">Logout</button>
+        <button type="button" id="btn-setpw-logout" class="btn-secondary" style="width:100%;margin-top:8px;">Esci</button>
         <p id="setpw-error" class="login-error hidden"></p>
       </form>
     </div>
@@ -52,11 +52,11 @@
   <!-- App -->
   <div id="app-section" class="app-section">
     <header>
-      <h1>Kanban Board</h1>
+      <h1>Kanban</h1>
       <div class="header-actions">
         <button id="btn-archive-view" class="btn-archive-toggle" title="Archivio">Archivio</button>
         <button id="btn-add" title="Nuova task">+</button>
-        <button id="btn-logout" class="btn-logout" title="Logout">Logout</button>
+        <button id="btn-logout" class="btn-logout" title="Esci">Esci</button>
       </div>
     </header>
 
@@ -69,19 +69,19 @@
 
     <main class="board">
       <div class="column" data-status="backlog">
-        <h2>Backlog</h2>
+        <h2>In arrivo</h2>
         <div class="card-list" data-status="backlog"></div>
       </div>
       <div class="column" data-status="todo">
-        <h2>Todo</h2>
+        <h2>Da fare</h2>
         <div class="card-list" data-status="todo"></div>
       </div>
       <div class="column" data-status="inprogress">
-        <h2>In Progress</h2>
+        <h2>In corso</h2>
         <div class="card-list" data-status="inprogress"></div>
       </div>
       <div class="column" data-status="done">
-        <h2>Done</h2>
+        <h2>Fatto</h2>
         <div class="card-list" data-status="done"></div>
       </div>
     </main>
@@ -103,10 +103,10 @@
 
           <label for="form-status">Stato</label>
           <select id="form-status">
-            <option value="backlog">Backlog</option>
-            <option value="todo">Todo</option>
-            <option value="inprogress">In Progress</option>
-            <option value="done">Done</option>
+            <option value="backlog">In arrivo</option>
+            <option value="todo">Da fare</option>
+            <option value="inprogress">In corso</option>
+            <option value="done">Fatto</option>
           </select>
 
           <label for="form-assignee">Assegnatario</label>
